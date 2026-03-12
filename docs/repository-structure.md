@@ -5,6 +5,12 @@
 このリポジトリは現在テンプレート段階にあり、`src/example.ts` などの最小サンプルが残っている。  
 実装開始時は、既存の品質設定を見直しつつ、JavaScript ベースの以下のターゲット構造へ段階的に移行する。
 
+### 現状との差分
+
+- 現在の root には `tsconfig.json`、`vitest.config.ts`、`src/example.ts`、`src/example.test.ts` が残っている
+- 以下の構造は JavaScript 実装へ移るためのターゲット状態であり、最初の基盤整理タスクで差分を解消する
+- `tests/e2e/` は将来の自動シナリオテスト用の予約領域とし、MVP時点の実機確認結果は `.steering/[YYYYMMDD]-[task]/tasklist.md` に記録する
+
 ## プロジェクト構造
 
 ```text
@@ -32,10 +38,11 @@ project-root/
 │   │   ├── components/
 │   │   ├── constants/
 │   │   ├── test-support/
+│   │   │   └── renderWithProviders.jsx
 │   │   └── utils/
 │   └── types/                    # 横断型定義
 ├── tests/
-│   └── e2e/                      # 実機またはE2Eシナリオ
+│   └── e2e/                      # 将来の自動シナリオテスト
 ├── docs/                         # 永続ドキュメント
 │   └── ideas/                    # 要求整理メモ
 ├── .agents/                      # Codex補助情報
@@ -151,6 +158,22 @@ project-root/
 - 依存可能: Expo / React Native公式モジュール、`types/`
 - 依存禁止: `screens/`
 
+### `src/features/memory-game/__tests__/`
+
+**役割**: `Vitest` + `@testing-library/react-native` を使う component test を配置する
+
+**配置ファイル**:
+- `HomeScreen.test.jsx`
+- `GameScreen.test.jsx`
+- `GameBoard.test.jsx`
+
+**命名規則**:
+- `*.test.jsx`
+
+**依存関係**:
+- 依存可能: `screens/`, `components/`, `hooks/`, `shared/test-support/`
+- 依存禁止: 実機専用の端末依存確認をここで完結させること
+
 ### `src/features/memory-game/types/`
 
 **役割**: ゲーム固有の型定義をまとめる
@@ -179,9 +202,19 @@ project-root/
 **依存関係**:
 - feature固有知識を持たないこと
 
+### `src/shared/test-support/`
+
+**役割**: component test 用の共通ラッパーや test helper を持つ
+
+**配置ファイル**:
+- `renderWithProviders.jsx`: Theme / Provider をまとめた test render helper
+
+**命名規則**:
+- helper は `camelCase.jsx` または `camelCase.js`
+
 ### `tests/e2e/`
 
-**役割**: 実機またはE2Eシナリオのテストを配置する
+**役割**: 将来的な自動シナリオテストを配置する。MVPの必須品質ゲートではない
 
 **構造**:
 ```text
@@ -209,7 +242,8 @@ tests/e2e/
 | テスト種別 | 配置先 | 命名規則 | 例 |
 |-----------|--------|---------|-----|
 | ユニットテスト | 対象ファイルと同階層の `__tests__/` または同階層 | `*.test.js` | `resolveTurn.test.js` |
-| UIコンポーネントテスト | `src/features/memory-game/__tests__/` | `*.test.jsx` | `GameScreen.test.jsx` |
+| コンポーネントテスト | `src/features/memory-game/__tests__/` | `*.test.jsx` | `GameScreen.test.jsx` |
+| 実機確認記録 | `.steering/[YYYYMMDD]-[task]/tasklist.md` | チェック項目を箇条書きで追記 | オフライン起動確認 |
 | E2Eテスト | `tests/e2e/` | `*.e2e.js` | `start-game.e2e.js` |
 
 ### 設定ファイル

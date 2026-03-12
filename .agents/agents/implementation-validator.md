@@ -51,6 +51,7 @@ tools: Read, Grep, Glob
 
 **チェック項目**:
 - [ ] ユニットテストが書かれているか
+- [ ] コンポーネントテストが必要箇所に書かれているか
 - [ ] カバレッジ目標を達成しているか
 - [ ] エッジケースがテストされているか
 - [ ] テストが適切に命名されているか
@@ -146,12 +147,12 @@ tools: Read, Grep, Glob
 **問題1**: [問題の説明]
 - **ファイル**: `[ファイルパス]:[行番号]`
 - **問題のコード**:
-```typescript
+```javascript
 [問題のあるコード]
 ```
 - **理由**: [なぜ問題か]
 - **修正案**:
-```typescript
+```javascript
 [修正後のコード]
 ```
 
@@ -172,7 +173,8 @@ tools: Read, Grep, Glob
 
 **実行したテスト**:
 - ユニットテスト: [パス/失敗数]
-- 統合テスト: [パス/失敗数]
+- コンポーネントテスト: [パス/失敗数]
+- 手動確認: [対象デバイス/結果]
 - カバレッジ: [%]
 
 **テスト不足領域**:
@@ -196,16 +198,11 @@ tools: Read, Grep, Glob
 
 ## 検証ツールの実行
 
-検証時には以下のツールを実行します:
+検証時には以下を優先して実行します。JavaScript 方針へ移行中の repo に `npm run typecheck` が残っていても、必須ゲートとは見なさず、必要なら移行タスクとして記録します。
 
 ### Lintチェック
 ```bash
 npm run lint
-```
-
-### 型チェック
-```bash
-npm run typecheck
 ```
 
 ### テスト実行
@@ -224,37 +221,55 @@ npm run build
 ### 命名規則
 
 **変数・関数**:
-```typescript
+```javascript
 // ✅ 良い例
 const userProfileData = fetchUserProfile();
-function calculateTotalPrice(items: CartItem[]): number { }
+/**
+ * @param {{ price: number }[]} cartItems
+ * @returns {number}
+ */
+function calculateTotalPrice(cartItems) { }
 
 // ❌ 悪い例
 const data = fetch();
-function calc(arr: any[]): number { }
+function calc(arr) { }
 ```
 
-**クラス・インターフェース**:
-```typescript
+**クラス・モジュール・契約**:
+```javascript
 // ✅ 良い例
 class TaskService { }
-interface TaskRepository { }
+
+/**
+ * タスク永続化の契約
+ * @typedef {Object} TaskRepository
+ * @property {(taskId: string) => Promise<object|null>} findById
+ */
 
 // ❌ 悪い例
 class Manager { }  // 曖昧
-interface IData { }  // 意味不明
+const dataHandler = { }  // 契約と責務が読めない
 ```
 
 ### 関数設計
 
 **単一責務の原則**:
-```typescript
+```javascript
 // ✅ 良い例: 単一の責務
-function calculateTotal(items: CartItem[]): number { }
-function formatPrice(amount: number): string { }
+/**
+ * @param {{ price: number }[]} cartItems
+ * @returns {number}
+ */
+function calculateTotal(cartItems) { }
+
+/**
+ * @param {number} amount
+ * @returns {string}
+ */
+function formatPrice(amount) { }
 
 // ❌ 悪い例: 複数の責務
-function calculateAndFormatPrice(items: CartItem[]): string { }
+function calculateAndFormatPrice(items) { }
 ```
 
 **関数の長さ**:
@@ -265,7 +280,7 @@ function calculateAndFormatPrice(items: CartItem[]): string { }
 ### エラーハンドリング
 
 **適切なエラー処理**:
-```typescript
+```javascript
 // ✅ 良い例
 try {
   const task = await taskService.create(data);
@@ -290,9 +305,12 @@ try {
 
 ### 入力検証
 
-```typescript
+```javascript
 // ✅ 良い例
-function validateEmail(email: string): void {
+/**
+ * @param {string} email
+ */
+function validateEmail(email) {
   if (!email || typeof email !== 'string') {
     throw new ValidationError('メールアドレスは必須です', 'email', email);
   }
@@ -302,12 +320,12 @@ function validateEmail(email: string): void {
 }
 
 // ❌ 悪い例: 検証なし
-function validateEmail(email: string): void { }
+function validateEmail(email) { }
 ```
 
 ### 機密情報管理
 
-```typescript
+```javascript
 // ✅ 良い例
 const apiKey = process.env.API_KEY;
 if (!apiKey) {
@@ -322,7 +340,7 @@ const apiKey = 'sk-1234567890abcdef';  // ハードコード禁止
 
 ### データ構造の選択
 
-```typescript
+```javascript
 // ✅ 良い例: O(1) アクセス
 const taskMap = new Map(tasks.map(t => [t.id, t]));
 const task = taskMap.get(taskId);
@@ -333,7 +351,7 @@ const task = tasks.find(t => t.id === taskId);
 
 ### ループの最適化
 
-```typescript
+```javascript
 // ✅ 良い例
 for (const item of items) {
   process(item);

@@ -46,14 +46,37 @@ npm test
 - 現在のテンプレートには TypeScript 向け設定や `npm run typecheck` が残っているため、JavaScript 実装へ入る前に別タスクで整理する
 - `lint` と `test` は、JavaScript 方針へ移行後も継続して維持する
 
+### JavaScript 実装着手前の整理タスク
+
+1. `src/example.ts` と `src/example.test.ts` を JavaScript / React Native のベース実装へ置き換える
+2. `vitest.config.ts` を `vitest.config.js` に揃える
+3. `tsconfig.json` と `npm run typecheck` を削除するか、エディタ補助として残すかを決めて `.steering` に記録する
+4. `@testing-library/react-native` と `src/shared/test-support/renderWithProviders.jsx` を前提とした component test 基盤を整える
+
 ## コーディング規約
 
 ### JavaScript方針
 
 - 新規コードは JavaScript で実装する
 - ゲーム状態、カード構造、状態遷移の期待値は JSDoc、設計文書、テストで明示する
-- 公開される関数、hook、service の入出力は命名とサンプルオブジェクトで読み取れるようにする
+- 公開される関数、hook、service の入出力は JSDoc typedef か関数コメントで読み取れるようにする
 - 型コンパイラに依存しない前提で、lint とテストを強めに維持する
+
+### JSDoc 規約
+
+```javascript
+/**
+ * @typedef {Object} GameSessionState
+ * @property {CardModel[]} cards
+ * @property {string[]} selectedCardIds
+ * @property {number} matchedPairs
+ * @property {'idle' | 'playing' | 'resolving' | 'finished'} gameStatus
+ */
+```
+
+- データ構造は `@typedef {Object}` と `@property` で記述する
+- 文字列ユニオン相当の値は typedef で列挙する
+- sample object だけではなく、実装者が再利用できる JSDoc 形式を残す
 
 ### 命名規則
 
@@ -123,23 +146,28 @@ const canSelectCard = true;
 
 ### ユニットテスト
 
+- 実行手段: `Vitest`
 - `createDeck`: 20枚生成、10ペア、重複なし、シャッフル結果の妥当性
 - `resolveTurn`: 一致、不一致、無効入力、クリア判定
 - selector / utility: 派生値の整合性
 
-### UI・統合テスト
+### コンポーネントテスト
 
+- 実行手段: `Vitest` + `@testing-library/react-native`
+- `src/shared/test-support/renderWithProviders.jsx` 経由で screen / providers をそろえる
 - ホーム画面からゲーム開始できる
 - 2枚めくった後に追加タップがロックされる
 - マッチ時にカードが固定される
 - ミスマッチ時にカードが戻る
 - 全ペア一致でクリア演出が出る
+- 音、振動、オフライン起動のようなネイティブ依存挙動は component test では保証しない
 
 ### 実機確認
 
 - 機内モードで起動からクリアまで遊べる
 - 音あり / 音なし端末設定の両方でゲームが成立する
 - 振動対応端末 / 非対応端末の両方でクラッシュしない
+- 結果は `.steering/[YYYYMMDD]-[task]/tasklist.md` に記録する
 
 ## 品質ゲート
 
@@ -148,6 +176,8 @@ const canSelectCard = true;
 - `npm run lint` が通る
 - `npm test` が通る
 - 追加した仕様に対応する `docs/` または `.steering/` 更新がある
+- 画面変更を含む場合は component test を追加するか、追加しない理由を `.steering` に残す
+- 音 / 振動 / オフライン挙動に影響する変更は実機確認結果を `.steering` に残す
 
 モバイル実装着手後は、必要に応じて以下も追加する:
 - 実機またはシミュレータでの起動確認
@@ -196,7 +226,7 @@ docs(prd): define offline MVP scope
 ## Definition of Done
 
 - 受け入れ条件を満たしている
-- テストと静的解析が通っている
+- unit test / component test / 静的解析が必要範囲で通っている
 - 実機確認が必要な変更は確認結果が残っている
 - 関連ドキュメントが更新されている
 - 子供向けUXを損なう後退がない

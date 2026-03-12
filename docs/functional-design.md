@@ -36,24 +36,27 @@ graph TB
 | 状態管理 | React state / reducer + custom hooks | MVPでは外部状態管理ライブラリなしで十分にシンプルに保てる |
 | アニメーション | React Native Animated API | 依存を増やしすぎずにカード反転やクリア演出を実装できる |
 | 端末フィードバック | Expo管理のデバイス機能モジュール | 振動や音の再生をExpoワークフロー内で扱いやすい |
-| テスト | Vitest | 既存リポジトリで導入済みであり、純粋関数中心のゲームロジックを検証しやすい |
+| ユニットテスト | Vitest | 既存リポジトリで導入済みであり、純粋関数中心のゲームロジックを検証しやすい |
+| コンポーネントテスト | `@testing-library/react-native` | HomeScreen / GameScreen / GameBoard の描画と操作フローを検証できる |
 
 ## データモデル定義
 
 ### エンティティ: CardModel
 
 ```javascript
-// CardSymbol:
-// 'apple' | 'balloon' | 'cat' | 'cloud' | 'flower'
-// | 'moon' | 'rainbow' | 'star' | 'sun' | 'unicorn'
-//
-// CardModel = {
-//   id: 'apple-0-a',      // 盤面内で一意のID
-//   symbol: 'apple',      // ペア判定に使う絵柄
-//   isFlipped: false,     // 一時的に表向きか
-//   isMatched: false,     // マッチ済みか
-//   position: 0,          // 配置順
-// };
+/**
+ * @typedef {'apple' | 'balloon' | 'cat' | 'cloud' | 'flower'
+ * | 'moon' | 'rainbow' | 'star' | 'sun' | 'unicorn'} CardSymbol
+ */
+
+/**
+ * @typedef {Object} CardModel
+ * @property {string} id 盤面内で一意のID
+ * @property {CardSymbol} symbol ペア判定に使う絵柄
+ * @property {boolean} isFlipped 一時的に表向きか
+ * @property {boolean} isMatched マッチ済みか
+ * @property {number} position 配置順
+ */
 ```
 
 **制約**:
@@ -64,14 +67,17 @@ graph TB
 ### エンティティ: GameSessionState
 
 ```javascript
-// GameStatus: 'idle' | 'playing' | 'resolving' | 'finished'
-//
-// GameSessionState = {
-//   cards: [card],          // CardModel[]
-//   selectedCardIds: [],    // 長さ0..2
-//   matchedPairs: 0,        // 0..10
-//   gameStatus: 'idle',
-// };
+/**
+ * @typedef {'idle' | 'playing' | 'resolving' | 'finished'} GameStatus
+ */
+
+/**
+ * @typedef {Object} GameSessionState
+ * @property {CardModel[]} cards
+ * @property {string[]} selectedCardIds 長さ0..2
+ * @property {number} matchedPairs 0..10
+ * @property {GameStatus} gameStatus
+ */
 ```
 
 **制約**:
@@ -79,6 +85,23 @@ graph TB
 - `matchedPairs` は `cards` 上の `isMatched` と矛盾してはならない
 - `gameStatus = 'resolving'` の間は追加タップを無視する
 - `matchedPairs = 10` になった時点で `gameStatus = 'finished'` へ遷移する
+
+### エンティティ: GameConfig
+
+```javascript
+/**
+ * @typedef {Object} GameConfig
+ * @property {number} rows 盤面の行数
+ * @property {number} columns 盤面の列数
+ * @property {number} pairCount 使用するペア数
+ * @property {number} mismatchDelayMs ミスマッチ時に戻すまでの待機時間
+ */
+```
+
+**制約**:
+- `rows * columns = pairCount * 2`
+- MVPの初期値は `rows = 5`、`columns = 4`、`pairCount = 10`
+- `mismatchDelayMs` は 800..1200ms の範囲に収める
 
 ### ER図
 
@@ -108,10 +131,10 @@ erDiagram
 
 **インターフェース**:
 ```javascript
-// HomeScreen props
-// {
-//   onStart: () => {},
-// }
+/**
+ * @typedef {Object} HomeScreenProps
+ * @property {function(): void} onStart
+ */
 ```
 
 **依存関係**:
@@ -126,10 +149,10 @@ erDiagram
 
 **インターフェース**:
 ```javascript
-// GameScreen props
-// {
-//   onExitToHome: () => {}, // 任意
-// }
+/**
+ * @typedef {Object} GameScreenProps
+ * @property {function(): void} [onExitToHome]
+ */
 ```
 
 **依存関係**:
@@ -145,12 +168,12 @@ erDiagram
 
 **インターフェース**:
 ```javascript
-// GameBoard props
-// {
-//   cards: [card],
-//   disabled: false,
-//   onCardPress: (cardId) => {},
-// }
+/**
+ * @typedef {Object} GameBoardProps
+ * @property {CardModel[]} cards
+ * @property {boolean} disabled
+ * @property {function(string): void} onCardPress
+ */
 ```
 
 **依存関係**:
@@ -165,13 +188,13 @@ erDiagram
 
 **インターフェース**:
 ```javascript
-// useGameSession return value
-// {
-//   state,
-//   startGame: () => {},
-//   restartGame: () => {},
-//   revealCard: (cardId) => {},
-// }
+/**
+ * @typedef {Object} UseGameSessionResult
+ * @property {GameSessionState} state
+ * @property {function(): void} startGame
+ * @property {function(): void} restartGame
+ * @property {function(string): void} revealCard
+ */
 ```
 
 **依存関係**:
@@ -186,13 +209,14 @@ erDiagram
 
 **インターフェース**:
 ```javascript
-// FeedbackKind: 'flip' | 'match' | 'mismatch' | 'finish'
-//
-// feedbackService = {
-//   play(kind) {
-//     return Promise.resolve();
-//   },
-// }
+/**
+ * @typedef {'flip' | 'match' | 'mismatch' | 'finish'} FeedbackKind
+ */
+
+/**
+ * @typedef {Object} FeedbackService
+ * @property {function(FeedbackKind): Promise<void>} play
+ */
 ```
 
 **依存関係**:
@@ -366,3 +390,25 @@ function createDeck(symbols) {
 
 - 子供向け体験を優先し、技術的エラーはポップアップで露出しない
 - 開発時のみログで検知し、ユーザーにはプレイ可能な最小体験を維持する
+
+## テスト設計
+
+### ユニットテスト
+
+- 実行基盤: `Vitest`
+- 対象: `createDeck`、`resolveTurn`、`gameSelectors`
+- 目的: ペア数、状態遷移、入力ガード、終了判定の正しさを固定する
+
+### コンポーネントテスト
+
+- 実行基盤: `Vitest` + `@testing-library/react-native`
+- 対象: `HomeScreen`、`GameScreen`、`GameBoard`、`useGameSession` を含む主要表示フロー
+- 補助: `src/shared/test-support/renderWithProviders.jsx` で共通ラッパーを提供する
+- 目的: 開始導線、2枚目選択後の入力ロック、マッチ / ミスマッチ反映、クリア導線を検証する
+- 制約: 音、振動、実端末依存の挙動は component test では保証しない
+
+### 実機確認
+
+- 対象: 音、振動、オフライン起動、起動時間、体感アニメーション
+- 方法: iOS / Android の少なくとも各1端末または相当シミュレータで確認する
+- 記録先: `.steering/[YYYYMMDD]-[task]/tasklist.md`

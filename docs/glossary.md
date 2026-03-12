@@ -49,6 +49,19 @@
 
 **英語表記**: Pair
 
+### Matched Pair
+
+**定義**: すでに一致判定が終わり、盤面上に固定された Pair。
+
+**説明**: `isMatched = true` の2枚組を指す。`matchedPairs` はこの数を表す。
+
+**関連用語**: Pair、Match
+
+**使用例**:
+- Matched Pair は裏向きに戻らない
+
+**英語表記**: Matched Pair
+
 ### Board
 
 **定義**: カードが並ぶゲーム盤面。
@@ -101,6 +114,19 @@
 - Mismatch 時は少し待ってから裏向きに戻る
 
 **英語表記**: Match / Mismatch
+
+### Feedback
+
+**定義**: プレイヤーの操作や結果に応じて返す視覚、音、振動の反応全般。
+
+**説明**: flip / match / mismatch / finish の各イベントに対して返す演出をまとめて指す。
+
+**関連用語**: Match / Mismatch、Haptics
+
+**使用例**:
+- Match の Feedback では成功体験を強調する
+
+**英語表記**: Feedback
 
 ## 技術用語
 
@@ -155,6 +181,14 @@
 **本プロジェクトでの用途**: JavaScript採用時に、カード構造や関数入出力の期待値を補助的に明示する。
 
 **関連ドキュメント**: `docs/functional-design.md`, `docs/development-guidelines.md`
+
+### `@testing-library/react-native`
+
+**定義**: React Native UI をテスト環境で描画し、ユーザー操作を検証するための component test ライブラリ。
+
+**本プロジェクトでの用途**: `HomeScreen` や `GameScreen` など、主要画面フローの component test を実行する。
+
+**関連ドキュメント**: `docs/functional-design.md`, `docs/architecture.md`, `docs/development-guidelines.md`
 
 ## 略語・頭字語
 
@@ -215,6 +249,14 @@
 **本プロジェクトでの適用**: `feedbackService`、`audioService`、`hapticsService`
 
 **関連コンポーネント**: `services/*`
+
+### GameConfig
+
+**定義**: 盤面サイズやミスマッチ待機時間など、ゲーム1回分の設定値をまとめた構造。
+
+**本プロジェクトでの適用**: `rows`、`columns`、`pairCount`、`mismatchDelayMs` を持ち、難易度拡張の基点になる。
+
+**関連コンポーネント**: `createDeck`, `resolveTurn`, `useGameSession`
 
 ## ステータス・状態
 
