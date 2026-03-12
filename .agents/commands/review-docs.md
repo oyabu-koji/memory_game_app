@@ -1,39 +1,46 @@
 ---
-description: ドキュメントを詳細レビューし、改善点を優先度付きで返す
+description: docsディレクトリの永続ドキュメントをレビューする
 ---
 
 # review-docs
 
-引数: ドキュメントパス（例: `review-docs docs/product-requirements.md`）
+このコマンドは `docs/` にある永続ドキュメントをレビューします。
+
+## 対象ドキュメント
+
+以下の6つのドキュメントをレビューします。
+
+- docs/product-requirements.md
+- docs/functional-design.md
+- docs/architecture.md
+- docs/repository-structure.md
+- docs/development-guidelines.md
+- docs/glossary.md
 
 ## 手順
 
-1. 対象ドキュメントの存在確認
-2. 必要なら背景実行にレビューを委任
-3. 以下の観点で評価
-   - 完全性
-   - 具体性
-   - 一貫性
-   - 測定可能性
-4. 優先度付きで改善点を報告
+1. `docs/` ディレクトリを確認する
+2. 上記6つのドキュメントが存在するか確認する
+3. 各ドキュメントを読み込む
+4. `doc-reviewer` サブエージェントにレビューを依頼する
+5. レビュー結果をまとめて報告する
 
-## 出力フォーマット
+## サブエージェント呼び出し
 
-```markdown
-# ドキュメントレビュー結果
-
-## 対象
-- [ファイルパス]
-
-## 主な改善点
-1. [改善点] (優先度: 高)
-2. [改善点] (優先度: 中)
-3. [改善点] (優先度: 低)
-
-## 総合評価
-- [1-5]/5
-
-## 次のアクション
-1. [最優先対応]
-2. [次点対応]
 ```
+subagent:
+  agent: doc-reviewer
+  input:
+    files:
+      - docs/product-requirements.md
+      - docs/functional-design.md
+      - docs/architecture.md
+      - docs/repository-structure.md
+      - docs/development-guidelines.md
+      - docs/glossary.md
+```
+
+## 完了条件
+
+- 6つのドキュメントのレビュー結果が提示される
+- 改善提案が提示される

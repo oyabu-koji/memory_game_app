@@ -1,7 +1,8 @@
 ---
 name: implementation-validator
 description: 実装コードの品質を検証し、スペックとの整合性を確認するサブエージェント
-model: sonnet
+model: inherit
+tools: Read, Grep, Glob
 ---
 
 # 実装検証エージェント

@@ -1,7 +1,8 @@
 ---
 name: doc-reviewer
 description: ドキュメントの品質をレビューし、改善提案を行うサブエージェント
-model: sonnet
+model: inherit
+tools: Read, Grep, Glob
 ---
 
 # ドキュメントレビューエージェント
