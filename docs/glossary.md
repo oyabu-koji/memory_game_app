@@ -4,7 +4,7 @@
 
 このドキュメントは、Memory Game プロジェクトで使用するドメイン用語、技術用語、状態名を統一する。
 
-**更新日**: 2026-03-13
+**更新日**: 2026-03-14
 
 ## ドメイン用語
 
@@ -162,7 +162,7 @@
 
 **定義**: アプリに同梱される画像・音声などの静的ファイル。
 
-**本プロジェクトでの用途**: オフライン環境でもカード画像と効果音を利用可能にする。
+**本プロジェクトでの用途**: オフライン環境でも効果音や将来のカード画像アセットを利用可能にする。
 
 **関連ドキュメント**: `docs/repository-structure.md`
 
@@ -226,13 +226,21 @@
 
 ## アーキテクチャ用語
 
-### Feature-first Architecture
+### Feature-first + Layered Client Architecture
 
-**定義**: 機能単位を中心にディレクトリを分ける設計方針。
+**定義**: 機能単位のまとまりとレイヤー境界を組み合わせて構成するクライアントアーキテクチャ。
 
-**本プロジェクトでの適用**: `src/features/memory-game/` を中心にUI、hook、logic、serviceをまとめる。
+**本プロジェクトでの適用**: `src/features/memory-game/` を中心に、UI / Application / Domain / Platform の境界を保ちながら構成する。
 
 **関連コンポーネント**: `GameScreen`, `useGameSession`, `feedbackService`
+
+### UI Layer
+
+**定義**: 画面描画、タップイベント受付、進行表示を担う層。
+
+**本プロジェクトでの適用**: `screens/` と `components/` が該当し、子供向け画面表現に集中する。
+
+**関連コンポーネント**: `HomeScreen`, `GameScreen`, `GameBoard`, `MemoryCard`
 
 ### Application Layer
 
@@ -241,6 +249,14 @@
 **本プロジェクトでの適用**: `useGameSession` が中心となる。
 
 **関連コンポーネント**: `useGameSession`
+
+### Domain Layer
+
+**定義**: UI や端末 API に依存せず、ゲームルールと状態遷移を扱う層。
+
+**本プロジェクトでの適用**: `createDeck`、`resolveTurn`、`gameSelectors` が該当する。
+
+**関連コンポーネント**: `createDeck`, `resolveTurn`, `gameSelectors`
 
 ### Platform Layer
 

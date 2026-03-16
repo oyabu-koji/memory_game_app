@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Memory Game",
+    "slug": "memory-game-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "assetBundlePatterns": [
+      "assets/**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#fdf6e9"
+      }
+    }
+  }
+}

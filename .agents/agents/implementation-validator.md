@@ -17,6 +17,7 @@ tools: Read, Grep, Glob
 3. テストカバレッジ
 4. セキュリティ
 5. パフォーマンス
+6. React Native / Expo 固有の実装品質
 
 ## 検証観点
 
@@ -26,7 +27,7 @@ tools: Read, Grep, Glob
 - [ ] PRDで定義された機能が実装されているか
 - [ ] 機能設計書のデータモデルと一致しているか
 - [ ] アーキテクチャ設計のレイヤー構造に従っているか
-- [ ] 要求されたAPI仕様と一致しているか
+- [ ] 要求された画面・状態遷移・外部インターフェース仕様と一致しているか
 
 **評価基準**:
 - ✅ 準拠: スペック通りに実装されている
@@ -89,6 +90,21 @@ tools: Read, Grep, Glob
 - ⚠️ 改善推奨: 最適化の余地あり
 - ❌ 問題あり: パフォーマンス要件未達
 
+### 6. React Native / Expo 固有チェック
+
+**チェック項目**:
+- [ ] screen / component / hook / service の責務が分離されているか
+- [ ] React Hooks が Rules of Hooks に従い、依存配列と cleanup が適切か
+- [ ] 一覧描画で `FlatList` / `SectionList` と `map` を適切に使い分けているか
+- [ ] `key` / `keyExtractor` が安定しており、不要な再描画を増やしていないか
+- [ ] Expo API が UI から直接乱用されず、availability / failure handling があるか
+- [ ] 実機依存の音 / 振動 / アセット / オフライン起動にフォールバックと確認記録があるか
+
+**評価基準**:
+- ✅ 高水準: Hook規約、一覧描画、Expo API利用、実機依存処理の扱いに問題がない
+- ⚠️ 要改善: 中程度の責務混在や再描画リスクがある
+- ❌ 不適切: Hook規約違反、Expo API直呼び、cleanup漏れ、一覧描画の明確な不備などユーザー影響がある
+
 ## 検証プロセス
 
 ### ステップ1: スペックの理解
@@ -103,12 +119,12 @@ tools: Read, Grep, Glob
 
 実装されたコードを読み込み、構造を理解します:
 - ディレクトリ構造の確認
-- 主要なクラス・関数の特定
+- 主要な画面・hook・関数・serviceの特定
 - データフローの理解
 
 ### ステップ3: 各観点での検証
 
-上記5つの観点(スペック準拠、コード品質、テストカバレッジ、セキュリティ、パフォーマンス)から検証します。
+上記6つの観点(スペック準拠、コード品質、テストカバレッジ、セキュリティ、パフォーマンス、React Native / Expo固有品質)から検証します。
 
 ### ステップ4: 検証結果の報告
 
@@ -131,8 +147,13 @@ tools: Read, Grep, Glob
 | テストカバレッジ | [✅/⚠️/❌] | [1-5] |
 | セキュリティ | [✅/⚠️/❌] | [1-5] |
 | パフォーマンス | [✅/⚠️/❌] | [1-5] |
+| React Native / Expo | [✅/⚠️/❌] | [1-5] |
 
 **総合スコア**: [平均スコア]/5
+
+**厳格運用ルール**:
+- [必須] の問題が1件でもある場合、総合評価を ✅ にしない
+- Hook規約違反、Expo API直呼び、ユーザー体験を損なう再描画リスクは原則として厳しめに扱う
 
 ### 良い実装
 
@@ -141,6 +162,8 @@ tools: Read, Grep, Glob
 - [具体的な良い点3]
 
 ### 検出された問題
+
+重い順に並べ、ユーザー影響と再発性が高いものを先に報告する。
 
 #### [必須] 重大な問題
 
@@ -174,6 +197,7 @@ tools: Read, Grep, Glob
 **実行したテスト**:
 - ユニットテスト: [パス/失敗数]
 - コンポーネントテスト: [パス/失敗数]
+- Expo起動確認: [可/不可]
 - 手動確認: [対象デバイス/結果]
 - カバレッジ: [%]
 
@@ -198,7 +222,7 @@ tools: Read, Grep, Glob
 
 ## 検証ツールの実行
 
-検証時には以下を優先して実行します。JavaScript 方針へ移行中の repo に `npm run typecheck` が残っていても、必須ゲートとは見なさず、必要なら移行タスクとして記録します。
+React Native + Expo + JavaScript 前提の実装では、以下を優先して実行します。
 
 ### Lintチェック
 ```bash
@@ -211,10 +235,149 @@ npm test
 npm run test:coverage
 ```
 
-### ビルド確認
+### Expo起動確認
 ```bash
-npm run build
+expo start
 ```
+
+## React Native / Expo 固有チェック
+
+この validator は React Native / Expo 実装を厳しめに評価します。  
+Hooks 規約違反、責務混在、不要な再描画、Expo API の UI 直呼びは、軽微に見えても再発しやすいため積極的に指摘します。
+
+### UIコンポーネント構造
+
+**チェック項目**:
+- [ ] screen が画面構成とイベント受付に集中し、ゲームルールや端末APIを抱え込んでいないか
+- [ ] component が表示責務に閉じており、状態遷移の一次ソースを持ちすぎていないか
+- [ ] hook が画面イベントとドメインロジックを接続し、service と logic の境界が守られているか
+- [ ] style 定義や定数が render ごとに不要に再生成されていないか
+
+**例**:
+```javascript
+// ✅ 良い例
+function GameScreen() {
+  const { state, revealCard, restartGame } = useGameSession();
+
+  return (
+    <View>
+      <GameBoard
+        cards={state.cards}
+        disabled={state.gameStatus === 'resolving'}
+        onCardPress={revealCard}
+      />
+      <Button title="もういちど" onPress={restartGame} />
+    </View>
+  );
+}
+
+// ❌ 悪い例
+function GameScreen() {
+  const [cards, setCards] = useState([]);
+
+  async function handleCardPress(cardId) {
+    await Haptics.selectionAsync();
+    const nextCards = resolveTurn(cards, cardId);
+    setCards(nextCards);
+  }
+
+  return <View>{cards.map(card => <Card key={card.id} card={card} onPress={handleCardPress} />)}</View>;
+}
+```
+
+### React Hooks 使用
+
+**チェック項目**:
+- [ ] Hook が条件分岐やループの中で呼ばれていないか
+- [ ] `useEffect` / `useFocusEffect` の依存配列が妥当か
+- [ ] timer、subscription、audio などに cleanup があるか
+- [ ] 導出可能な state を `useState` で重複保持していないか
+- [ ] render 中に `setState` や副作用を起こしていないか
+
+**例**:
+```javascript
+// ✅ 良い例
+useEffect(() => {
+  if (gameStatus !== 'resolving') {
+    return undefined;
+  }
+
+  const timerId = setTimeout(resolveMismatch, mismatchDelayMs);
+  return () => clearTimeout(timerId);
+}, [gameStatus, mismatchDelayMs, resolveMismatch]);
+
+// ❌ 悪い例
+if (isResolving) {
+  useEffect(() => {
+    setTimeout(() => setIsResolving(false), 1000);
+  }, []);
+}
+```
+
+### React Native パフォーマンス
+
+**チェック項目**:
+- [ ] スクロール対象や件数が増減する一覧で `FlatList` / `SectionList` を使っているか
+- [ ] 固定小規模グリッドで `map` を使う場合、件数と再描画コストに妥当性があるか
+- [ ] `keyExtractor` や `key` が安定しているか
+- [ ] `renderItem` / item component が不要に重い責務を持っていないか
+- [ ] 画像や音声アセットの読み込みが render パスをブロックしていないか
+
+**例**:
+```javascript
+// ✅ 良い例
+<FlatList
+  data={results}
+  keyExtractor={(item) => item.id}
+  renderItem={({ item }) => <ResultRow result={item} />}
+/>
+
+// ❌ 悪い例
+<ScrollView>
+  {results.map((item) => (
+    <ResultRow key={Math.random()} result={item} />
+  ))}
+</ScrollView>
+```
+
+### Expo API 使用
+
+**チェック項目**:
+- [ ] Expo API を screen / component から直接呼ばず、service 経由へ寄せているか
+- [ ] API 利用失敗時にクラッシュさせず、フォールバックできるか
+- [ ] 権限や availability が必要な API は事前条件を確認しているか
+- [ ] Expo 公式対応モジュールを優先し、非公式依存を増やしすぎていないか
+
+**例**:
+```javascript
+// ✅ 良い例
+export async function playFeedback(kind) {
+  try {
+    await Haptics.selectionAsync();
+  } catch (error) {
+    console.warn('feedback unavailable', error);
+  }
+}
+
+// ❌ 悪い例
+function MemoryCard({ onPress }) {
+  async function handlePress() {
+    await Haptics.selectionAsync();
+    onPress();
+  }
+
+  return <Pressable onPress={handlePress} />;
+}
+```
+
+### Expo アプリ前提のレビュー観点
+
+**チェック項目**:
+- [ ] `expo start` で起動できる前提に沿っているか
+- [ ] 必須アセットが同梱前提で読み込まれているか
+- [ ] オフライン起動を前提にしており、不要な外部通信依存がないか
+- [ ] iOS / Android の端末差異にフォールバック方針があるか
+- [ ] 実機確認が必要な変更で `.steering` に記録が残っているか
 
 ## コード品質の詳細チェック
 
@@ -223,27 +386,27 @@ npm run build
 **変数・関数**:
 ```javascript
 // ✅ 良い例
-const userProfileData = fetchUserProfile();
+const selectedCardIds = [];
 /**
- * @param {{ price: number }[]} cartItems
- * @returns {number}
+ * @param {{ rows: number, columns: number, pairCount: number }} gameConfig
+ * @returns {Array<object>}
  */
-function calculateTotalPrice(cartItems) { }
+function createShuffledDeck(gameConfig) { }
 
 // ❌ 悪い例
-const data = fetch();
-function calc(arr) { }
+const value = load();
+function calc(list) { }
 ```
 
-**クラス・モジュール・契約**:
+**コンポーネント・モジュール・契約**:
 ```javascript
 // ✅ 良い例
-class TaskService { }
+function GameScreen() { }
 
 /**
- * タスク永続化の契約
- * @typedef {Object} TaskRepository
- * @property {(taskId: string) => Promise<object|null>} findById
+ * フィードバック再生の契約
+ * @typedef {Object} FeedbackService
+ * @property {(kind: 'flip' | 'match' | 'mismatch' | 'finish') => Promise<void>} play
  */
 
 // ❌ 悪い例
@@ -257,19 +420,19 @@ const dataHandler = { }  // 契約と責務が読めない
 ```javascript
 // ✅ 良い例: 単一の責務
 /**
- * @param {{ price: number }[]} cartItems
- * @returns {number}
+ * @param {{ rows: number, columns: number, pairCount: number }} gameConfig
+ * @returns {Array<object>}
  */
-function calculateTotal(cartItems) { }
+function createDeck(gameConfig) { }
 
 /**
- * @param {number} amount
- * @returns {string}
+ * @param {Array<{ isMatched: boolean }>} cards
+ * @returns {number}
  */
-function formatPrice(amount) { }
+function getMatchedPairCount(cards) { }
 
 // ❌ 悪い例: 複数の責務
-function calculateAndFormatPrice(items) { }
+function createDeckAndPlaySound(gameConfig) { }
 ```
 
 **関数の長さ**:
@@ -283,19 +446,16 @@ function calculateAndFormatPrice(items) { }
 ```javascript
 // ✅ 良い例
 try {
-  const task = await taskService.create(data);
-  return task;
+  const sound = await loadMatchSoundAsync();
+  return sound;
 } catch (error) {
-  if (error instanceof ValidationError) {
-    logger.warn(`検証エラー: ${error.message}`);
-    throw error;
-  }
-  throw new DatabaseError('タスクの作成に失敗しました', error);
+  logger.warn('効果音アセットの読み込みに失敗しました', error);
+  throw new Error('効果音アセットの読み込みに失敗しました');
 }
 
 // ❌ 悪い例: エラーを無視
 try {
-  return await taskService.create(data);
+  return await loadMatchSoundAsync();
 } catch (error) {
   return null;  // エラー情報が失われる
 }
@@ -308,32 +468,34 @@ try {
 ```javascript
 // ✅ 良い例
 /**
- * @param {string} email
+ * @param {string} cardId
  */
-function validateEmail(email) {
-  if (!email || typeof email !== 'string') {
-    throw new ValidationError('メールアドレスは必須です', 'email', email);
+function validateCardId(cardId) {
+  if (!cardId || typeof cardId !== 'string') {
+    throw new Error('カードIDは必須です');
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new ValidationError('メールアドレスの形式が不正です', 'email', email);
+  if (!/^[a-z0-9-]+$/.test(cardId)) {
+    throw new Error('カードIDの形式が不正です');
   }
 }
 
 // ❌ 悪い例: 検証なし
-function validateEmail(email) { }
+function validateCardId(cardId) { }
 ```
 
-### 機密情報管理
+### 設定値・機密情報管理
 
 ```javascript
 // ✅ 良い例
-const apiKey = process.env.API_KEY;
-if (!apiKey) {
-  throw new Error('API_KEY環境変数が設定されていません');
+import Constants from 'expo-constants';
+
+const supportEmail = Constants.expoConfig?.extra?.supportEmail;
+if (!supportEmail) {
+  throw new Error('supportEmail が Expo 設定に定義されていません');
 }
 
 // ❌ 悪い例
-const apiKey = 'sk-1234567890abcdef';  // ハードコード禁止
+const serviceRoleKey = 'secret-key';  // アプリへ秘密鍵を埋め込まない
 ```
 
 ## パフォーマンスチェックリスト
@@ -342,24 +504,24 @@ const apiKey = 'sk-1234567890abcdef';  // ハードコード禁止
 
 ```javascript
 // ✅ 良い例: O(1) アクセス
-const taskMap = new Map(tasks.map(t => [t.id, t]));
-const task = taskMap.get(taskId);
+const cardMap = new Map(cards.map(card => [card.id, card]));
+const card = cardMap.get(cardId);
 
 // ❌ 悪い例: O(n) 検索
-const task = tasks.find(t => t.id === taskId);
+const card = cards.find(item => item.id === cardId);
 ```
 
 ### ループの最適化
 
 ```javascript
 // ✅ 良い例
-for (const item of items) {
-  process(item);
+for (const card of cards) {
+  process(card);
 }
 
 // ❌ 悪い例: 毎回lengthを計算
-for (let i = 0; i < items.length; i++) {
-  process(items[i]);
+for (let i = 0; i < cards.length; i++) {
+  process(cards[i]);
 }
 ```
 
@@ -370,3 +532,4 @@ for (let i = 0; i < items.length; i++) {
 - **建設的**: 改善案を必ず提示する
 - **バランス**: 良い点も指摘する
 - **実用的**: 実行可能な修正案を提供する
+- **厳格**: Hook規約違反、Expo APIの直呼び、再描画リスク、実機依存処理の放置は軽微でも指摘する

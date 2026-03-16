@@ -1,186 +1,112 @@
 # アーキテクチャ設計ガイド
 
-## 基本原則
+## 目的
 
-### 1. 技術選定には理由を明記
+`docs/architecture.md` は、PRD と機能設計を React Native + Expo + JavaScript でどう成立させるかを説明するドキュメントです。  
+実装ファイルの一覧ではなく、技術判断の理由と境界を明文化してください。
 
-**悪い例**:
-```
-- Node.js
-- TypeScript
-```
+## このプロジェクトで固定する前提
 
-**良い例**:
-```
-- Node.js v24.11.0 (LTS)
-  - 2026年4月までの長期サポート保証により、本番環境での安定稼働が期待できる
-  - 非同期I/O処理に優れ、APIサーバーとして高いパフォーマンスを発揮
-  - npmエコシステムが充実しており、必要なライブラリの入手が容易
+- アプリは React Native + Expo で実装する
+- 実装言語は JavaScript を前提にする
+- MVP はオフライン完結の単一クライアントアプリ
+- 品質確認の基本コマンドは `npm run lint`、`npm test`、`expo start`
 
-- TypeScript 5.x
-  - 静的型付けによりコンパイル時にバグを検出でき、保守性が向上
-  - IDEの補完機能が強力で、開発効率が高い
-  - チーム開発における型定義の共有により、コードの可読性と品質が担保される
+## 書くべき内容
 
-- npm 11.x
-  - Node.js v24.11.0に標準搭載されており、別途インストール不要
-  - workspaces機能によりモノレポ構成に対応
-  - package-lock.jsonによる依存関係の厳密な管理が可能
-```
+### 1. 前提と方針
 
-### 2. レイヤー分離の原則
+- どの体験を最優先に守るか
+- どの制約を持つか
+- なぜその技術を選ぶか
 
-各レイヤーの責務を明確にし、依存関係を一方向に保ちます:
+### 2. テクノロジースタック
 
-```
-UI → Service → Data (OK)
-UI ← Service (NG)
-UI → Data (NG)
-```
+最低でも次を明記します。
 
-### 3. 測定可能な要件
+- Node.js / npm
+- JavaScript (ES2022)
+- React Native
+- Expo
+- ESLint
+- Vitest
+- `@testing-library/react-native`
 
-すべてのパフォーマンス要件は測定可能な形で記述します。
+ツール名だけで終わらせず、用途と採用理由を書くこと。
 
-## レイヤードアーキテクチャの設計
+### 3. レイヤー構造
 
-### 各レイヤーの責務
+少なくとも以下の境界を分けます。
 
-**UIレイヤー**:
-```typescript
-// 責務: ユーザー入力の受付とバリデーション
-class CLI {
-  // OK: サービスレイヤーを呼び出す
-  async addTask(title: string) {
-    const task = await this.taskService.create({ title });
-    console.log(`Created: ${task.id}`);
-  }
+- UI Layer: `screens` / `components`
+- Application Layer: `hooks` / `controllers`
+- Domain Layer: ゲームルール、selector、純粋関数
+- Platform Layer: 音、振動、ローカル保存
 
-  // NG: データレイヤーを直接呼び出す
-  async addTask(title: string) {
-    const task = await this.repository.save({ title }); // ❌
-  }
-}
-```
+各レイヤーごとに以下を必ず書きます。
 
-**サービスレイヤー**:
-```typescript
-// 責務: ビジネスロジックの実装
-class TaskService {
-  // ビジネスロジック: 優先度の自動推定
-  async create(data: CreateTaskData): Promise<Task> {
-    const task = {
-      ...data,
-      estimatedPriority: this.estimatePriority(data),
-    };
-    return this.repository.save(task);
-  }
-}
-```
+- 責務
+- 許可される依存
+- 禁止される依存
 
-**データレイヤー**:
-```typescript
-// 責務: データの永続化
-class TaskRepository {
-  async save(task: Task): Promise<void> {
-    await this.storage.write(task);
-  }
-}
-```
+### 4. データ管理
 
-## パフォーマンス要件の設定
+MVP がメモリのみで十分か、将来ローカル保存が必要かを明記します。  
+アセットはオフライン前提で同梱する方針を記述してください。
 
-### 具体的な数値目標
+### 5. テスト戦略
 
-```
-コマンド実行時間: 100ms以内(平均的なPC環境で)
-└─ 測定方法: console.timeでCLI起動から結果表示まで計測
-└─ 測定環境: CPU Core i5相当、メモリ8GB、SSD
+アーキテクチャ書では、テスト対象をレイヤーに対応づけます。
 
-タスク一覧表示: 1000件まで1秒以内
-└─ 測定方法: 1000件のダミーデータで計測
-└─ 許容範囲: 100件で100ms、1000件で1秒、10000件で10秒
-```
+- unit test: Domain Layer
+- component test: UI + Application Layer
+- 起動確認: Expo 起動と主要フロー
 
-## セキュリティ設計
+コマンドは次を基準に記載します。
 
-### データ保護の3原則
-
-1. **最小権限の原則**
 ```bash
-# ファイルパーミッション
-chmod 600 ~/.devtask/tasks.json  # 所有者のみ読み書き
+npm run lint
+npm test
+expo start
 ```
 
-2. **入力検証**
-```typescript
-function validateTitle(title: string): void {
-  if (!title || title.length === 0) {
-    throw new ValidationError('タイトルは必須です');
-  }
-  if (title.length > 200) {
-    throw new ValidationError('タイトルは200文字以内です');
-  }
-}
-```
+### 6. 技術的制約
 
-3. **機密情報の管理**
-```bash
-# 環境変数で管理
-export DEVTASK_API_KEY="xxxxx"  # コード内にハードコードしない
-```
+次のような制約は必ず残します。
 
-## スケーラビリティ設計
+- オフライン必須
+- 子供向け UX 優先
+- 不要な権限を要求しない
+- Expo 管理ワークフローで完結させる
 
-### データ増加への対応
+## 書き方のコツ
 
-**想定データ量**: [例: 10,000件のタスク]
+### 良い記述
 
-**対策**:
-- データのページネーション
-- 古いデータのアーカイブ
-- インデックスの最適化
+- 「Expo を採用する。音と振動を公式モジュールで扱え、初期実装のネイティブ設定を減らせる」
+- 「Platform Layer の失敗はゲーム進行を止めず、失敗時はフォールバックする」
 
-```typescript
-// アーカイブ機能の例: 古いタスクを別ファイルに移動
-class ArchiveService {
-  async archiveCompletedTasks(olderThan: Date): Promise<void> {
-    const oldTasks = await this.repository.findCompleted(olderThan);
-    await this.archiveStorage.save(oldTasks);
-    await this.repository.deleteMany(oldTasks.map(t => t.id));
-  }
-}
-```
+### 避ける記述
 
-## 依存関係管理
+- 「最新技術だから使う」
+- 「あとで考える」
+- 「必要になったら調整する」
 
-### バージョン管理方針
+## 推奨の章立て
 
-```json
-{
-  "dependencies": {
-    "commander": "^11.0.0",  // マイナーバージョンアップは自動
-    "chalk": "5.3.0"         // 破壊的変更のリスクがある場合は固定
-  },
-  "devDependencies": {
-    "typescript": "~5.3.0",  // パッチバージョンのみ自動
-    "eslint": "^9.0.0"
-  }
-}
-```
+1. 前提と方針
+2. テクノロジースタック
+3. アーキテクチャパターン
+4. データ管理
+5. オフライン戦略
+6. テスト戦略
+7. 技術的制約
+8. 依存関係管理
 
-**方針**:
-- 安定版は固定(^でマイナーバージョンまで許可)
-- 破壊的変更のリスクがある場合は完全固定
-- devDependenciesはパッチバージョンのみ自動(~)
+## 完成チェック
 
-## チェックリスト
-
-- [ ] すべての技術選定に理由が記載されている
-- [ ] レイヤードアーキテクチャが明確に定義されている
-- [ ] パフォーマンス要件が測定可能である
-- [ ] セキュリティ考慮事項が記載されている
-- [ ] スケーラビリティが考慮されている
-- [ ] バックアップ戦略が定義されている
-- [ ] 依存関係管理のポリシーが明確である
-- [ ] テスト戦略が定義されている
+- [ ] React Native + Expo + JavaScript の前提が書かれている
+- [ ] UI / Application / Domain / Platform の境界が説明されている
+- [ ] `npm run lint` / `npm test` / `expo start` が確認手順に含まれている
+- [ ] オフライン方針と端末依存処理の扱いが書かれている
+- [ ] 将来拡張と MVP の切り分けができている

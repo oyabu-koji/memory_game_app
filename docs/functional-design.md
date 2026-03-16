@@ -410,5 +410,5 @@ function createDeck(symbols) {
 ### 実機確認
 
 - 対象: 音、振動、オフライン起動、起動時間、体感アニメーション
-- 方法: iOS / Android の少なくとも各1端末または相当シミュレータで確認する
+- 方法: iOS / Android 各1実機で確認する
 - 記録先: `.steering/[YYYYMMDD]-[task]/tasklist.md`

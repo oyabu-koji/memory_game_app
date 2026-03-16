@@ -1,306 +1,202 @@
 # リポジトリ構造定義書 (Repository Structure Document)
 
+## 適用方針
+
+- 本リポジトリは React Native + Expo + JavaScript を前提にする
+- 実装ファイルは `.js` / `.jsx` を基本とする
+- feature-first 構成を採用する
+- 品質確認は `npm run lint`、`npm test`、`expo start` を基本とする
+
 ## プロジェクト構造
 
-```
+```text
 project-root/
-├── src/                   # ソースコード
-│   ├── [layer1]/          # [説明]
-│   ├── [layer2]/          # [説明]
-│   └── [layer3]/          # [説明]
-├── tests/                 # テストコード
-│   ├── unit/              # ユニットテスト
-│   ├── integration/       # 統合テスト
-│   └── e2e/               # E2Eテスト
-├── docs/                  # プロジェクトドキュメント
-├── config/                # 設定ファイル
-└── scripts/               # ビルド・デプロイスクリプト
+├── App.jsx
+├── assets/
+│   ├── audio/
+│   ├── images/
+│   └── icons/
+├── src/
+│   ├── app/
+│   │   ├── navigation/
+│   │   ├── providers/
+│   │   └── theme/
+│   ├── features/
+│   │   └── [feature-name]/
+│   │       ├── components/
+│   │       ├── hooks/
+│   │       ├── logic/
+│   │       ├── screens/
+│   │       ├── services/
+│   │       ├── types/
+│   │       └── __tests__/
+│   └── shared/
+│       ├── components/
+│       ├── constants/
+│       ├── test-support/
+│       └── utils/
+├── tests/
+│   └── e2e/
+├── docs/
+├── .agents/
+├── .steering/
+├── package.json
+├── eslint.config.js
+└── [必要なら] jsconfig.json
 ```
 
 ## ディレクトリ詳細
 
-### src/ (ソースコードディレクトリ)
-
-#### [ディレクトリ1]
+### `assets/`
 
 **役割**: [説明]
 
 **配置ファイル**:
-- [ファイルパターン1]: [説明]
-- [ファイルパターン2]: [説明]
+- [例1]
+- [例2]
 
 **命名規則**:
-- [規則1]
-- [規則2]
+- `kebab-case`
 
-**依存関係**:
-- 依存可能: [ディレクトリ名]
-- 依存禁止: [ディレクトリ名]
-
-**例**:
-```
-[ディレクトリ名]/
-├── [example-file1].ts
-└── [example-file2].ts
-```
-
-#### [ディレクトリ2]
+### `src/app/`
 
 **役割**: [説明]
 
 **配置ファイル**:
-- [ファイルパターン1]: [説明]
-
-**命名規則**:
-- [規則1]
+- `providers/`
+- `theme/`
+- `navigation/`
 
 **依存関係**:
-- 依存可能: [ディレクトリ名]
-- 依存禁止: [ディレクトリ名]
+- 依存可能: `shared/`, `features/`
+- 依存禁止: `tests/`
 
-### tests/ (テストディレクトリ)
+### `src/features/[feature-name]/screens/`
 
-#### unit/
+**役割**: [説明]
 
-**役割**: ユニットテストの配置
-
-**構造**:
-```
-tests/unit/
-└── src/                    # srcディレクトリと同じ構造
-    └── [layer]/
-        └── [filename].test.ts
-```
+**配置ファイル**:
+- `[Feature]Screen.jsx`
 
 **命名規則**:
-- パターン: `[テスト対象ファイル名].test.ts`
-- 例: `TaskService.ts` → `TaskService.test.ts`
+- `PascalCaseScreen.jsx`
 
-#### integration/
+**依存関係**:
+- 依存可能: `components/`, `hooks/`, `shared/`
+- 依存禁止: Expo API の直接利用
 
-**役割**: 統合テストの配置
+### `src/features/[feature-name]/components/`
 
-**構造**:
-```
-tests/integration/
-└── [feature]/              # 機能単位でディレクトリ分割
-    └── [scenario].test.ts
-```
-
-#### e2e/
-
-**役割**: E2Eテストの配置
-
-**構造**:
-```
-tests/e2e/
-└── [user-scenario]/        # ユーザーシナリオ単位
-    └── [flow].test.ts
-```
-
-### docs/ (ドキュメントディレクトリ)
-
-**配置ドキュメント**:
-- `product-requirements.md`: プロダクト要求定義書
-- `functional-design.md`: 機能設計書
-- `architecture.md`: アーキテクチャ設計書
-- `repository-structure.md`: リポジトリ構造定義書(本ドキュメント)
-- `development-guidelines.md`: 開発ガイドライン
-- `glossary.md`: 用語集
-
-### config/ (設定ファイルディレクトリ - 該当する場合)
+**役割**: [説明]
 
 **配置ファイル**:
-- 設定ファイル
-- 定数定義ファイル
+- `[ComponentName].jsx`
 
-**例**:
-```
-config/
-├── default.ts
-└── constants.ts
-```
+**命名規則**:
+- `PascalCase.jsx`
 
-### scripts/ (スクリプトディレクトリ - 該当する場合)
+**依存関係**:
+- 依存可能: `shared/`, `types/`
+- 依存禁止: `screens/`
+
+### `src/features/[feature-name]/hooks/`
+
+**役割**: [説明]
 
 **配置ファイル**:
-- ビルドスクリプト
-- 開発補助スクリプト
+- `use[Feature].js`
+
+**命名規則**:
+- `use` で始める
+
+**依存関係**:
+- 依存可能: `logic/`, `services/`, `types/`
+- 依存禁止: `screens/`
+
+### `src/features/[feature-name]/logic/`
+
+**役割**: [説明]
+
+**配置ファイル**:
+- `createSomething.js`
+- `resolveSomething.js`
+
+**命名規則**:
+- `camelCase.js`
+
+**依存関係**:
+- 依存可能: `types/`, `shared/utils/`
+- 依存禁止: React、Expo、画面コンポーネント
+
+### `src/features/[feature-name]/services/`
+
+**役割**: [説明]
+
+**配置ファイル**:
+- `feedbackService.js`
+- `storageService.js`
+
+**命名規則**:
+- `camelCase.js`
+
+**依存関係**:
+- 依存可能: Expo / React Native 公式 API
+- 依存禁止: `screens/`
+
+### `src/features/[feature-name]/__tests__/`
+
+**役割**: [説明]
+
+**配置ファイル**:
+- `[Target].test.jsx`
+- `[Target].test.js`
+
+**命名規則**:
+- `*.test.jsx` / `*.test.js`
+
+### `src/shared/`
+
+**役割**: [説明]
+
+**配置ファイル**:
+- `components/`
+- `constants/`
+- `utils/`
+- `test-support/`
 
 ## ファイル配置規則
 
-### ソースファイル
-
 | ファイル種別 | 配置先 | 命名規則 | 例 |
 |------------|--------|---------|-----|
-| [種別1] | [ディレクトリ] | [規則] | [例] |
-| [種別2] | [ディレクトリ] | [規則] | [例] |
+| 画面 | `screens/` | `PascalCaseScreen.jsx` | `GameScreen.jsx` |
+| コンポーネント | `components/` | `PascalCase.jsx` | `MemoryCard.jsx` |
+| hook | `hooks/` | `useSomething.js` | `useGameSession.js` |
+| service | `services/` | `camelCase.js` | `feedbackService.js` |
+| util / logic | `logic/`, `utils/` | `camelCase.js` | `createDeck.js` |
+| test | `__tests__/` | `*.test.jsx` / `*.test.js` | `GameScreen.test.jsx` |
 
-### テストファイル
+## 依存関係ルール
 
-| テスト種別 | 配置先 | 命名規則 | 例 |
-|-----------|--------|---------|-----|
-| ユニットテスト | tests/unit/ | [対象].test.ts | TaskService.test.ts |
-| 統合テスト | tests/integration/ | [機能].test.ts | task-crud.test.ts |
-| E2Eテスト | tests/e2e/ | [シナリオ].test.ts | user-workflow.test.ts |
-
-### 設定ファイル
-
-| ファイル種別 | 配置先 | 命名規則 |
-|------------|--------|---------|
-| 環境設定 | config/environments/ | [環境名].ts |
-| ツール設定 | プロジェクトルート | [ツール名].config.js |
-| 型定義 | src/types/ | [対象].d.ts |
-
-## 命名規則
-
-### ディレクトリ名
-
-- **レイヤーディレクトリ**: 複数形、kebab-case
-  - 例: `services/`, `repositories/`, `controllers/`
-- **機能ディレクトリ**: 単数形、kebab-case
-  - 例: `task-management/`, `user-authentication/`
-
-### ファイル名
-
-- **クラスファイル**: PascalCase
-  - 例: `TaskService.ts`, `UserRepository.ts`
-- **関数ファイル**: camelCase
-  - 例: `formatDate.ts`, `validateEmail.ts`
-- **定数ファイル**: UPPER_SNAKE_CASE
-  - 例: `API_ENDPOINTS.ts`, `ERROR_MESSAGES.ts`
-
-### テストファイル名
-
-- パターン: `[テスト対象].test.ts` または `[テスト対象].spec.ts`
-- 例: `TaskService.test.ts`, `formatDate.spec.ts`
-
-## 依存関係のルール
-
-### レイヤー間の依存
-
-```
-UIレイヤー
-    ↓ (OK)
-サービスレイヤー
-    ↓ (OK)
-データレイヤー
+```text
+screens -> hooks -> logic
+screens -> hooks -> services
+components -> shared
+services -> Expo / React Native API
 ```
 
-**禁止される依存**:
-- データレイヤー → サービスレイヤー (❌)
-- データレイヤー → UIレイヤー (❌)
-- サービスレイヤー → UIレイヤー (❌)
+**禁止例**:
+- `logic/` から Expo API を呼ぶ
+- `components/` が `screens/` を import する
+- `shared/` に feature 固有知識を持ち込む
 
-### モジュール間の依存
+## テスト / 起動確認
 
-**循環依存の禁止**:
-```typescript
-// ❌ 悪い例: 循環依存
-// fileA.ts
-import { funcB } from './fileB';
-
-// fileB.ts
-import { funcA } from './fileA';  // 循環依存
+```bash
+npm run lint
+npm test
+expo start
 ```
 
-**解決策**:
-```typescript
-// ✅ 良い例: 共通モジュールの抽出
-// shared.ts
-export interface SharedType { /* ... */ }
+## 実機確認の記録先
 
-// fileA.ts
-import { SharedType } from './shared';
-
-// fileB.ts
-import { SharedType } from './shared';
-```
-
-## スケーリング戦略
-
-### 機能の追加
-
-新しい機能を追加する際の配置方針:
-
-1. **小規模機能**: 既存ディレクトリに配置
-2. **中規模機能**: レイヤー内にサブディレクトリを作成
-3. **大規模機能**: 独立したモジュールとして分離
-
-**例**:
-```
-src/
-├── services/
-│   ├── TaskService.ts           # 既存機能
-│   └── task-management/         # 中規模機能の分離
-│       ├── TaskService.ts
-│       ├── SubtaskService.ts
-│       └── TaskCategoryService.ts
-```
-
-### ファイルサイズの管理
-
-**ファイル分割の目安**:
-- 1ファイル: 300行以下を推奨
-- 300-500行: リファクタリングを検討
-- 500行以上: 分割を強く推奨
-
-**分割方法**:
-```typescript
-// 悪い例: 1ファイルに全機能
-// TaskService.ts (800行)
-
-// 良い例: 責務ごとに分割
-// TaskService.ts (200行) - CRUD操作
-// TaskValidationService.ts (150行) - バリデーション
-// TaskNotificationService.ts (100行) - 通知処理
-```
-
-## 特殊ディレクトリ
-
-### .steering/ (ステアリングファイル)
-
-**役割**: 特定の開発作業における「今回何をするか」を定義
-
-**構造**:
-```
-.steering/
-└── [YYYYMMDD]-[task-name]/
-    ├── requirements.md      # 今回の作業の要求内容
-    ├── design.md            # 変更内容の設計
-    └── tasklist.md          # タスクリスト
-```
-
-**命名規則**: `20250115-add-user-profile` 形式
-
-### .agents/ (Codex設定)
-
-**役割**: Codex設定とカスタマイズ
-
-**構造**:
-```
-.agents/
-├── commands/                # スラッシュコマンド
-├── skills/                  # タスクモード別スキル
-└── agents/                  # サブエージェント定義
-```
-
-## 除外設定
-
-### .gitignore
-
-プロジェクトで除外すべきファイル:
-- `node_modules/`
-- `dist/`
-- `.env`
-- `.steering/` (タスク管理用の一時ファイル)
-- `*.log`
-- `.DS_Store`
-
-### .prettierignore, .eslintignore
-
-ツールで除外すべきファイル:
-- `dist/`
-- `node_modules/`
-- `.steering/`
-- `coverage/`
+- `.steering/[YYYYMMDD]-[task]/tasklist.md`

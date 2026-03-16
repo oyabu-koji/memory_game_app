@@ -1,421 +1,113 @@
-# プロセスガイド (Process Guide)
+# 開発プロセスガイド
 
-## 基本原則
+## 基本フロー
 
-### 1. 具体例を豊富に含める
+1. `docs/` の永続ドキュメントを確認する
+2. `.steering/[YYYYMMDD]-[task]/` を作成または参照する
+3. `requirements.md` / `design.md` / `tasklist.md` を整える
+4. 実装またはドキュメント更新を行う
+5. `npm run lint`、`npm test`、`expo start` で確認する
+6. `.steering` と必要な `docs/` を更新する
 
-抽象的なルールだけでなく、具体的なコード例を提示します。
+## 日常的な作業サイクル
 
-**悪い例**:
-```
-変数名は分かりやすくすること
-```
+### 実装開始前
 
-**良い例**:
-```typescript
-// ✅ 良い例: 役割が明確
-const userAuthentication = new UserAuthenticationService();
-const taskRepository = new TaskRepository();
+- 対象タスクの受け入れ条件を確認する
+- 影響する `docs/` を確認する
+- 実機確認が必要かを判断する
 
-// ❌ 悪い例: 曖昧
-const auth = new Service();
-const repo = new Repository();
-```
+### 実装中
 
-### 2. 理由を説明する
+- `tasklist.md` を完了単位で更新する
+- 要件判断が変わったら `requirements.md` / `design.md` を直す
+- ドキュメントと実装を分離して考えず、同一タスクとして扱う
 
-「なぜそうするのか」を明確にします。
+### 実装後
 
-**例**:
-```
-## エラーを無視しない
-
-理由: エラーを無視すると、問題の原因究明が困難になります。
-予期されるエラーは適切に処理し、予期しないエラーは上位に伝播させて
-ログに記録できるようにします。
-```
-
-### 3. 測定可能な基準を設定
-
-曖昧な表現を避け、具体的な数値を示します。
-
-**悪い例**:
-```
-コードカバレッジは高く保つこと
-```
-
-**良い例**:
-```
-コードカバレッジ目標:
-- ユニットテスト: 80%以上
-- 統合テスト: 60%以上
-- E2Eテスト: 主要フロー100%
-```
-
-## Git運用ルール
-
-### ブランチ戦略（Git Flow採用）
-
-**Git Flowとは**:
-Vincent Driessenが提唱した、機能開発・リリース・ホットフィックスを体系的に管理するブランチモデル。明確な役割分担により、チーム開発での並行作業と安定したリリースを実現します。
-
-**ブランチ構成**:
-```
-main (本番環境)
-└── develop (開発・統合環境)
-    ├── feature/* (新機能開発)
-    ├── fix/* (バグ修正)
-    └── release/* (リリース準備)※必要に応じて
-```
-
-**運用ルール**:
-- **main**: 本番リリース済みの安定版コードのみを保持。タグでバージョン管理
-- **develop**: 次期リリースに向けた最新の開発コードを統合。CIでの自動テスト実施
-- **feature/\*、fix/\***: developから分岐し、作業完了後にPRでdevelopへマージ
-- **直接コミット禁止**: すべてのブランチでPRレビューを必須とし、コード品質を担保
-- **マージ方針**: feature→develop は squash merge、develop→main は merge commit を推奨
-
-**Git Flowのメリット**:
-- ブランチの役割が明確で、複数人での並行開発がしやすい
-- 本番環境(main)が常にクリーンな状態に保たれる
-- 緊急対応時はhotfixブランチで迅速に対応可能（必要に応じて導入）
-
-### コミットメッセージの規約
-
-**Conventional Commitsを推奨**:
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-**Type一覧**:
-```
-feat: 新機能 (minor version up)
-fix: バグ修正 (patch version up)
-docs: ドキュメント
-style: フォーマット (コードの動作に影響なし)
-refactor: リファクタリング
-perf: パフォーマンス改善
-test: テスト追加・修正
-build: ビルドシステム
-ci: CI/CD設定
-chore: その他 (依存関係更新など)
-
-BREAKING CHANGE: 破壊的変更 (major version up)
-```
-
-**良いコミットメッセージの例**:
-
-```
-feat(task): 優先度設定機能を追加
-
-ユーザーがタスクに優先度(高/中/低)を設定できるようになりました。
-
-実装内容:
-- Taskモデルにpriorityフィールド追加
-- CLI に --priority オプション追加
-- 優先度によるソート機能実装
-
-破壊的変更:
-- Task型の構造が変更されました
-- 既存のタスクデータはマイグレーションが必要です
-
-Closes #123
-BREAKING CHANGE: Task型にpriority必須フィールド追加
-```
-
-### プルリクエストのテンプレート
-
-**効果的なPRテンプレート**:
-
-```markdown
-## 変更の種類
-- [ ] 新機能 (feat)
-- [ ] バグ修正 (fix)
-- [ ] リファクタリング (refactor)
-- [ ] ドキュメント (docs)
-- [ ] その他 (chore)
-
-## 変更内容
-### 何を変更したか
-[簡潔な説明]
-
-### なぜ変更したか
-[背景・理由]
-
-### どのように変更したか
-- [変更点1]
-- [変更点2]
-
-## テスト
-### 実施したテスト
-- [ ] ユニットテスト追加
-- [ ] 統合テスト追加
-- [ ] 手動テスト実施
-
-### テスト結果
-[テスト結果の説明]
-
-## 関連Issue
-Closes #[番号]
-Refs #[番号]
-
-## レビューポイント
-[レビュアーに特に見てほしい点]
-```
-
-## テスト戦略
-
-### テストピラミッド
-
-```
-       /\
-      /E2E\       少 (遅い、高コスト)
-     /------\
-    / 統合   \     中
-   /----------\
-  / ユニット   \   多 (速い、低コスト)
- /--------------\
-```
-
-**目標比率**:
-- ユニットテスト: 70%
-- 統合テスト: 20%
-- E2Eテスト: 10%
-
-### テストの書き方
-
-**Given-When-Then パターン**:
-
-```typescript
-describe('TaskService', () => {
-  describe('タスク作成', () => {
-    it('正常なデータの場合、タスクを作成できる', async () => {
-      // Given: 準備
-      const service = new TaskService(mockRepository);
-      const validData = { title: 'テスト' };
-
-      // When: 実行
-      const result = await service.create(validData);
-
-      // Then: 検証
-      expect(result.id).toBeDefined();
-      expect(result.title).toBe('テスト');
-    });
-
-    it('タイトルが空の場合、ValidationErrorをスローする', async () => {
-      // Given: 準備
-      const service = new TaskService(mockRepository);
-      const invalidData = { title: '' };
-
-      // When/Then: 実行と検証
-      await expect(
-        service.create(invalidData)
-      ).rejects.toThrow(ValidationError);
-    });
-  });
-});
-```
-
-### カバレッジ目標
-
-**測定可能な目標**:
-
-```json
-// jest.config.js
-{
-  "coverageThreshold": {
-    "global": {
-      "branches": 80,
-      "functions": 80,
-      "lines": 80,
-      "statements": 80
-    },
-    "./src/services/": {
-      "branches": 90,
-      "functions": 90,
-      "lines": 90,
-      "statements": 90
-    }
-  }
-}
-```
-
-**理由**:
-- 重要なビジネスロジック(services/)は高いカバレッジを要求
-- UI層は低めでも許容
-- 100%を目指さない (コストと効果のバランス)
-
-## コードレビュープロセス
-
-### レビューの目的
-
-1. **品質保証**: バグの早期発見
-2. **知識共有**: チーム全体でコードベースを理解
-3. **学習機会**: ベストプラクティスの共有
-
-### 効果的なレビューのポイント
-
-**レビュアー向け**:
-
-1. **建設的なフィードバック**
-```markdown
-## ❌ 悪い例
-このコードはダメです。
-
-## ✅ 良い例
-この実装だと O(n²) の時間計算量になります。
-Map を使うと O(n) に改善できます:
-
-```typescript
-const taskMap = new Map(tasks.map(t => [t.id, t]));
-const result = ids.map(id => taskMap.get(id));
-```
-```
-
-2. **優先度の明示**
-```markdown
-[必須] セキュリティ: パスワードがログに出力されています
-[推奨] パフォーマンス: ループ内でのDB呼び出しを避けましょう
-[提案] 可読性: この関数名をもっと明確にできませんか？
-[質問] この処理の意図を教えてください
-```
-
-3. **ポジティブなフィードバックも**
-```markdown
-✨ この実装は分かりやすいですね！
-👍 エッジケースがしっかり考慮されています
-💡 このパターンは他でも使えそうです
-```
-
-**レビュイー向け**:
-
-1. **セルフレビューを実施**
-   - PR作成前に自分でコードを見直す
-   - 説明が必要な箇所にコメントを追加
-
-2. **小さなPRを心がける**
-   - 1PR = 1機能
-   - 変更ファイル数: 10ファイル以内を推奨
-   - 変更行数: 300行以内を推奨
-
-3. **説明を丁寧に**
-   - なぜこの実装にしたか
-   - 検討した代替案
-   - 特に見てほしいポイント
-
-### レビュー時間の目安
-
-- 小規模PR (100行以下): 15分
-- 中規模PR (100-300行): 30分
-- 大規模PR (300行以上): 1時間以上
-
-**原則**: 大規模PRは避け、分割する
-
-## 自動化の推進（該当する場合）
-
-### 品質チェックの自動化
-
-**自動化項目と採用ツール**:
-
-1. **Lintチェック**
-   - **ESLint 9.x** + **@typescript-eslint**
-     - TypeScript専用ルールセットでコーディング規約を統一
-     - 潜在的なバグや非推奨パターンを自動検出
-     - 設定ファイル: `eslint.config.js` (Flat Config形式)
-
-2. **コードフォーマット**
-   - **Prettier 3.x**
-     - コードスタイルを自動整形し、レビュー時の議論を削減
-     - ESLintと併用し、`eslint-config-prettier`で競合を回避
-     - 設定ファイル: `.prettierrc`
-
-3. **型チェック**
-   - **TypeScript Compiler (tsc) 5.x**
-     - `tsc --noEmit`で型エラーのみをチェック
-     - ビルドとは独立して型安全性を検証
-     - 設定ファイル: `tsconfig.json`
-
-4. **テスト実行**
-   - **Vitest 2.x**
-     - Viteベースで高速起動・実行
-     - TypeScript/ESMをネイティブサポートし、設定不要で動作
-     - カバレッジ測定（@vitest/coverage-v8）が標準搭載
-     - モダンな開発体験とHMR対応
-
-5. **ビルド確認**
-   - **TypeScript Compiler (tsc)**
-     - 標準コンパイラで型チェック付きビルドを保証
-     - 追加ツール不要でシンプルな構成
-     - `tsconfig.json`で出力設定を一元管理
-
-**実装方法**:
-
-**1. CI/CD (GitHub Actions)**
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test
-      - run: npm run build
-```
-
-**2. Pre-commit フック (Husky 9.x + lint-staged)**
-```json
-// package.json
-{
-  "scripts": {
-    "prepare": "husky",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "build": "tsc"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ]
-  }
-}
-```
 ```bash
-# .husky/pre-commit
-npm run lint-staged
-npm run typecheck
+npm run lint
+npm test
+expo start
 ```
 
-**導入効果**:
-- コミット前に自動チェックが走り、不具合コードの混入を防止
-- PR作成時に自動でCI実行され、マージ前に品質を担保
-- 早期発見により、修正コストを最大80%削減（バグ検出が本番後の場合と比較）
+- lint が通る
+- test が通る
+- Expo で起動できる
+- 必要なら実機またはシミュレータで主要フローを確認する
 
-**この構成を選んだ理由**:
-- 2025年時点でのTypeScriptエコシステムにおける標準的かつモダンな構成
-- ツール間の互換性が高く、設定の衝突が少ない
-- 開発体験と実行速度のバランスが優れている
+## Git 運用
 
-## チェックリスト
+### ブランチ
 
-- [ ] ブランチ戦略が決まっている
-- [ ] コミットメッセージ規約が明確である
-- [ ] PRテンプレートが用意されている
-- [ ] テストの種類とカバレッジ目標が設定されている
-- [ ] コードレビュープロセスが定義されている
-- [ ] CI/CDパイプラインが構築されている
+- `main`: 安定状態
+- `develop`: 統合作業用
+- `feature/<task>`: 機能追加
+- `fix/<task>`: 修正
+- `docs/<task>`: ドキュメント更新
+
+### コミットメッセージ
+
+Conventional Commits を使います。
+
+```text
+feat(game): add game session hook
+fix(feedback): guard haptics failure
+docs(architecture): define expo platform layer
+```
+
+## プルリクエスト前チェック
+
+- [ ] 変更理由を説明できる
+- [ ] 受け入れ条件を満たしている
+- [ ] `npm run lint` が通る
+- [ ] `npm test` が通る
+- [ ] `expo start` で起動確認している
+- [ ] 必要な `docs/` / `.steering/` が更新されている
+
+## コードレビュー観点
+
+### 実装面
+
+- 画面が Expo API を直接持っていないか
+- 純粋ロジックが `logic/` に閉じているか
+- JSDoc でデータ契約が読めるか
+- 無効入力やレースコンディションを防いでいるか
+
+### テスト面
+
+- 純粋ロジックの unit test があるか
+- 主要フローの component test があるか
+- 実機依存の変更に確認記録があるか
+
+### ドキュメント面
+
+- `docs/` と `.steering/` が更新されているか
+- 用語や状態名が既存ドキュメントと揃っているか
+
+## 自動化の考え方
+
+CI に最低限入れるもの:
+
+- `npm run lint`
+- `npm test`
+
+ローカルで必ず確認するもの:
+
+- `expo start`
+
+## 実機確認が必要なケース
+
+- 音や振動を変更した
+- オフライン挙動を変更した
+- タップ体験やアニメーションを変更した
+- 画面レイアウトを大きく変えた
+
+確認結果は `.steering/[YYYYMMDD]-[task]/tasklist.md` に残します。
+
+## 完成チェック
+
+- [ ] `.steering` の対象タスクが最新
+- [ ] `docs/` との不整合がない
+- [ ] `npm run lint` / `npm test` / `expo start` の結果が確認済み
+- [ ] 実機確認が必要な変更は記録されている

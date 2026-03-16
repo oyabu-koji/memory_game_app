@@ -27,6 +27,18 @@
 - JavaScript: ES2022
 - 開発コンテナ: `.devcontainer/devcontainer.json`
 
+## Environment Constraints
+
+- Node 22
+- Expo SDK 54
+- React Native managed workflow
+- JavaScript (not TypeScript)
+
+### 環境制約ルール
+
+- Expo SDK を自動アップグレードしない
+- Expo 関連の依存関係は必ず `npx expo install` を使って追加・更新する
+
 ### 初回セットアップ
 
 ```bash
@@ -39,19 +51,19 @@ npm ci
 ```bash
 npm run lint
 npm test
+expo start
 ```
 
 注記:
-- 現在のリポジトリはテンプレート状態なので、Expo導入後にモバイル実行用スクリプトを追加する
-- 現在のテンプレートには TypeScript 向け設定や `npm run typecheck` が残っているため、JavaScript 実装へ入る前に別タスクで整理する
-- `lint` と `test` は、JavaScript 方針へ移行後も継続して維持する
+- Expo managed workflow を正式前提とし、起動確認は `expo start` を基準にする
+- `lint`、`test`、`expo start` を日常的な確認コマンドとして維持する
 
-### JavaScript 実装着手前の整理タスク
+### Expo managed workflow 方針
 
-1. `src/example.ts` と `src/example.test.ts` を JavaScript / React Native のベース実装へ置き換える
-2. `vitest.config.ts` を `vitest.config.js` に揃える
-3. `tsconfig.json` と `npm run typecheck` を削除するか、エディタ補助として残すかを決めて `.steering` に記録する
-4. `@testing-library/react-native` と `src/shared/test-support/renderWithProviders.jsx` を前提とした component test 基盤を整える
+- Expo 公式対応モジュールを優先し、画面コンポーネントから端末 API を直接呼ばない
+- 起動確認は `expo start` と iOS / Android 各1実機で行う
+- component test と実機確認の役割を分け、ネイティブ依存挙動は実機で確定させる
+- 実機確認結果は `.steering/[YYYYMMDD]-[task]/tasklist.md` に記録する
 
 ## コーディング規約
 
@@ -164,9 +176,9 @@ const canSelectCard = true;
 
 ### 実機確認
 
-- 機内モードで起動からクリアまで遊べる
-- 音あり / 音なし端末設定の両方でゲームが成立する
-- 振動対応端末 / 非対応端末の両方でクラッシュしない
+- iOS 1実機で起動からクリアまで遊べる
+- Android 1実機で起動からクリアまで遊べる
+- 両実機で音 / 振動 / オフライン起動に致命的な問題がない
 - 結果は `.steering/[YYYYMMDD]-[task]/tasklist.md` に記録する
 
 ## 品質ゲート
@@ -175,12 +187,13 @@ const canSelectCard = true;
 
 - `npm run lint` が通る
 - `npm test` が通る
+- `expo start` で起動確認できる
 - 追加した仕様に対応する `docs/` または `.steering/` 更新がある
 - 画面変更を含む場合は component test を追加するか、追加しない理由を `.steering` に残す
 - 音 / 振動 / オフライン挙動に影響する変更は実機確認結果を `.steering` に残す
 
-モバイル実装着手後は、必要に応じて以下も追加する:
-- 実機またはシミュレータでの起動確認
+起動・実機確認では以下も行う:
+- iOS / Android 各1実機での起動確認
 - オフライン動作確認
 - 主要アニメーションの目視確認
 
@@ -226,7 +239,7 @@ docs(prd): define offline MVP scope
 ## Definition of Done
 
 - 受け入れ条件を満たしている
-- unit test / component test / 静的解析が必要範囲で通っている
+- unit test / component test / 静的解析 / `expo start` による起動確認が必要範囲で通っている
 - 実機確認が必要な変更は確認結果が残っている
 - 関連ドキュメントが更新されている
 - 子供向けUXを損なう後退がない

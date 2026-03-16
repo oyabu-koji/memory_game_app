@@ -2,13 +2,13 @@
 
 ## 適用方針
 
-このリポジトリは現在テンプレート段階にあり、`src/example.ts` などの最小サンプルが残っている。  
-実装開始時は、既存の品質設定を見直しつつ、JavaScript ベースの以下のターゲット構造へ段階的に移行する。
+このドキュメントは、React Native + Expo + JavaScript を前提とした正式なリポジトリ構造を定義する。  
+Expo managed workflow を前提に、アプリ本体、同梱アセット、テスト、ドキュメント、作業記録を以下の構造で管理する。
 
-### 現状との差分
+### 運用前提
 
-- 現在の root には `tsconfig.json`、`vitest.config.ts`、`src/example.ts`、`src/example.test.ts` が残っている
-- 以下の構造は JavaScript 実装へ移るためのターゲット状態であり、最初の基盤整理タスクで差分を解消する
+- `App.jsx` を Expo エントリーポイントとする
+- `app.json` または `app.config.js` を Expo 設定の source of truth とする
 - `tests/e2e/` は将来の自動シナリオテスト用の予約領域とし、MVP時点の実機確認結果は `.steering/[YYYYMMDD]-[task]/tasklist.md` に記録する
 
 ## プロジェクト構造
@@ -16,6 +16,7 @@
 ```text
 project-root/
 ├── App.jsx                       # Expoエントリーポイント
+├── app.json                      # Expo managed workflow 設定
 ├── assets/                       # 画像・音声などの同梱アセット
 │   ├── audio/
 │   ├── cards/
@@ -250,6 +251,7 @@ tests/e2e/
 
 | ファイル種別 | 配置先 | 命名規則 |
 |------------|--------|---------|
+| Expo設定 | プロジェクトルート | `app.json` または `app.config.js` |
 | ツール設定 | プロジェクトルート | 既存ツール標準に従う |
 | ドキュメント | `docs/` | `kebab-case.md` |
 | ステアリング | `.steering/[YYYYMMDD]-[task]/` | テンプレート名固定 |
